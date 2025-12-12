@@ -251,27 +251,14 @@ class _ChorusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final containerColor = theme.colorScheme.primaryContainer;
-    final borderColor = theme.colorScheme.primary;
-    
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Color.fromARGB(
-          (containerColor.a * 0.5).round(),
-          containerColor.r.round(),
-          containerColor.g.round(),
-          containerColor.b.round(),
-        ),
+        color: theme.colorScheme.primaryContainer.withOpacity(0.5),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Color.fromARGB(
-            (borderColor.a * 0.3).round(),
-            borderColor.r.round(),
-            borderColor.g.round(),
-            borderColor.b.round(),
-          ),
+          color: theme.colorScheme.primary.withOpacity(0.3),
         ),
       ),
       child: Column(
