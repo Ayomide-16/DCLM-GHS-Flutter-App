@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import '../models/hymn.dart';
@@ -57,7 +58,7 @@ class _HymnDetailScreenState extends State<HymnDetailScreen> {
         }
       });
     } catch (e) {
-      print('Error loading audio: $e');
+      debugPrint('Error loading audio: $e');
     }
   }
 

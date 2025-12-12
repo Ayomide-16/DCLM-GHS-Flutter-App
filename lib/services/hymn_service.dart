@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:xml/xml.dart';
 import '../models/hymn.dart';
@@ -61,7 +62,7 @@ class HymnService {
       _cache[language] = hymns;
       return hymns;
     } catch (e) {
-      print('Error loading hymns: $e');
+      debugPrint('Error loading hymns: $e');
       return [];
     }
   }

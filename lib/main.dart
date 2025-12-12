@@ -23,7 +23,7 @@ class GospelHymnApp extends StatelessWidget {
           centerTitle: true,
           elevation: 0,
         ),
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           elevation: 1,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -40,7 +40,7 @@ class GospelHymnApp extends StatelessWidget {
           centerTitle: true,
           elevation: 0,
         ),
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           elevation: 1,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
