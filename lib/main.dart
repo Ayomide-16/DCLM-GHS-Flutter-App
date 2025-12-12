@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
 
 void main() {
-  runApp(const GospelHymnApp());
+  runApp(const GHSApp());
 }
 
-class GospelHymnApp extends StatelessWidget {
-  const GospelHymnApp({super.key});
+class GHSApp extends StatelessWidget {
+  const GHSApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Gospel Hymn',
+      title: 'GHS',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(

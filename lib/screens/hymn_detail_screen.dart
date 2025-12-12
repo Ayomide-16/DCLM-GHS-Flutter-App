@@ -19,12 +19,20 @@ class _HymnDetailScreenState extends State<HymnDetailScreen> {
   bool _hasAudio = false;
   Duration _duration = Duration.zero;
   Duration _position = Duration.zero;
+  
+  // Playback controls
+  double _playbackSpeed = 1.0;
+  RepeatMode _repeatMode = RepeatMode.off;
+  int _repeatCount = 0;
+  int _currentRepeat = 0;
 
   @override
   void initState() {
     super.initState();
     _initAudio();
   }
+
+  int get _stanzaCount => widget.hymn.stanzas.length;
 
   Future<void> _initAudio() async {
     if (widget.hymn.audioFile == null) return;
@@ -53,12 +61,40 @@ class _HymnDetailScreenState extends State<HymnDetailScreen> {
         });
         
         if (state.processingState == ProcessingState.completed) {
-          _audioPlayer!.seek(Duration.zero);
-          _audioPlayer!.pause();
+          _handlePlaybackComplete();
         }
       });
     } catch (e) {
       debugPrint('Error loading audio: $e');
+    }
+  }
+
+  void _handlePlaybackComplete() async {
+    if (_repeatMode == RepeatMode.off) {
+      _audioPlayer!.seek(Duration.zero);
+      _audioPlayer!.pause();
+      return;
+    }
+    
+    if (_repeatMode == RepeatMode.forStanzas) {
+      _currentRepeat++;
+      if (_currentRepeat < _repeatCount) {
+        // Wait 2 seconds between repeats for musical flow
+        await Future.delayed(const Duration(seconds: 2));
+        _audioPlayer!.seek(Duration.zero);
+        _audioPlayer!.play();
+      } else {
+        // Done repeating
+        _currentRepeat = 0;
+        _audioPlayer!.seek(Duration.zero);
+        _audioPlayer!.pause();
+        setState(() => _repeatMode = RepeatMode.off);
+      }
+    } else if (_repeatMode == RepeatMode.untilStopped) {
+      // Wait 2 seconds between repeats
+      await Future.delayed(const Duration(seconds: 2));
+      _audioPlayer!.seek(Duration.zero);
+      _audioPlayer!.play();
     }
   }
 
@@ -78,10 +114,43 @@ class _HymnDetailScreenState extends State<HymnDetailScreen> {
     }
   }
 
+  void _changeSpeed(double delta) {
+    final newSpeed = (_playbackSpeed + delta).clamp(0.5, 2.0);
+    setState(() => _playbackSpeed = newSpeed);
+    _audioPlayer?.setSpeed(newSpeed);
+  }
+
+  void _cycleRepeatMode() {
+    setState(() {
+      if (_repeatMode == RepeatMode.off) {
+        _repeatMode = RepeatMode.forStanzas;
+        _repeatCount = _stanzaCount;
+        _currentRepeat = 0;
+      } else if (_repeatMode == RepeatMode.forStanzas) {
+        _repeatMode = RepeatMode.untilStopped;
+        _currentRepeat = 0;
+      } else {
+        _repeatMode = RepeatMode.off;
+        _currentRepeat = 0;
+      }
+    });
+  }
+
   String _formatDuration(Duration duration) {
     final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
     final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
     return '$minutes:$seconds';
+  }
+
+  String _getRepeatLabel() {
+    switch (_repeatMode) {
+      case RepeatMode.off:
+        return 'Off';
+      case RepeatMode.forStanzas:
+        return 'x$_stanzaCount';
+      case RepeatMode.untilStopped:
+        return '∞';
+    }
   }
 
   @override
@@ -107,6 +176,13 @@ class _HymnDetailScreenState extends State<HymnDetailScreen> {
                     style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: theme.colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '$_stanzaCount stanzas',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -135,7 +211,7 @@ class _HymnDetailScreenState extends State<HymnDetailScreen> {
                     ),
                   ],
                   
-                  const SizedBox(height: 100), // Space for audio player
+                  const SizedBox(height: 120), // Space for audio player
                 ],
               ),
             ),
@@ -173,16 +249,61 @@ class _HymnDetailScreenState extends State<HymnDetailScreen> {
                       ),
                     ),
                     
-                    // Time and controls
+                    // Time display
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            _formatDuration(_position),
+                            style: theme.textTheme.bodySmall,
+                          ),
+                          Text(
+                            _formatDuration(_duration),
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 8),
+                    
+                    // Controls row
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        Text(
-                          _formatDuration(_position),
-                          style: theme.textTheme.bodySmall,
+                        // Speed down
+                        IconButton(
+                          onPressed: () => _changeSpeed(-0.1),
+                          icon: const Icon(Icons.remove),
+                          tooltip: 'Slower',
                         ),
                         
-                        // Play button
+                        // Speed display
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.secondaryContainer,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            '${_playbackSpeed.toStringAsFixed(1)}x',
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.onSecondaryContainer,
+                            ),
+                          ),
+                        ),
+                        
+                        // Speed up
+                        IconButton(
+                          onPressed: () => _changeSpeed(0.1),
+                          icon: const Icon(Icons.add),
+                          tooltip: 'Faster',
+                        ),
+                        
+                        // Play/Pause
                         IconButton.filled(
                           onPressed: _togglePlay,
                           icon: _isLoading
@@ -202,9 +323,38 @@ class _HymnDetailScreenState extends State<HymnDetailScreen> {
                           ),
                         ),
                         
-                        Text(
-                          _formatDuration(_duration),
-                          style: theme.textTheme.bodySmall,
+                        // Repeat button
+                        IconButton(
+                          onPressed: _cycleRepeatMode,
+                          icon: Icon(
+                            _repeatMode == RepeatMode.off 
+                                ? Icons.repeat 
+                                : Icons.repeat_on,
+                            color: _repeatMode != RepeatMode.off 
+                                ? theme.colorScheme.primary 
+                                : null,
+                          ),
+                          tooltip: 'Repeat: ${_getRepeatLabel()}',
+                        ),
+                        
+                        // Repeat label
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: _repeatMode != RepeatMode.off 
+                                ? theme.colorScheme.primaryContainer 
+                                : theme.colorScheme.surfaceContainerLow,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            _getRepeatLabel(),
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: _repeatMode != RepeatMode.off 
+                                  ? theme.colorScheme.onPrimaryContainer 
+                                  : theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -217,6 +367,8 @@ class _HymnDetailScreenState extends State<HymnDetailScreen> {
     );
   }
 }
+
+enum RepeatMode { off, forStanzas, untilStopped }
 
 class _StanzaCard extends StatelessWidget {
   final String content;

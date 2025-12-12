@@ -5,8 +5,15 @@ import 'hymn_detail_screen.dart';
 
 class HymnListScreen extends StatefulWidget {
   final String language;
+  final String? categoryName;
+  final List<int>? filterHymnIds;
 
-  const HymnListScreen({super.key, required this.language});
+  const HymnListScreen({
+    super.key, 
+    required this.language,
+    this.categoryName,
+    this.filterHymnIds,
+  });
 
   @override
   State<HymnListScreen> createState() => _HymnListScreenState();
@@ -27,9 +34,26 @@ class _HymnListScreenState extends State<HymnListScreen> {
 
   Future<void> _loadHymns() async {
     final hymns = await HymnService.loadHymns(widget.language);
+    
+    // Sort hymns: move hymn 0 to the end
+    final sortedHymns = List<Hymn>.from(hymns);
+    sortedHymns.sort((a, b) {
+      if (a.id == 0) return 1;  // Move hymn 0 to end
+      if (b.id == 0) return -1;
+      return a.id.compareTo(b.id);
+    });
+    
+    // Apply category filter if provided
+    List<Hymn> finalHymns = sortedHymns;
+    if (widget.filterHymnIds != null) {
+      finalHymns = sortedHymns
+          .where((h) => widget.filterHymnIds!.contains(h.id))
+          .toList();
+    }
+    
     setState(() {
-      _allHymns = hymns;
-      _filteredHymns = hymns;
+      _allHymns = finalHymns;
+      _filteredHymns = finalHymns;
       _isLoading = false;
     });
   }
@@ -49,6 +73,7 @@ class _HymnListScreenState extends State<HymnListScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final title = widget.categoryName ?? '${widget.language} Hymns';
 
     return Scaffold(
       appBar: AppBar(
@@ -62,7 +87,7 @@ class _HymnListScreenState extends State<HymnListScreen> {
                 ),
                 onChanged: _onSearchChanged,
               )
-            : Text('${widget.language} Hymns'),
+            : Text(title),
         actions: [
           IconButton(
             icon: Icon(_isSearching ? Icons.close : Icons.search),
