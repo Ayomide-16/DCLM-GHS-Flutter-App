@@ -115,7 +115,7 @@ class _HymnDetailScreenState extends State<HymnDetailScreen> {
   }
 
   void _changeSpeed(double delta) {
-    final newSpeed = (_playbackSpeed + delta).clamp(0.5, 2.0);
+    final newSpeed = (_playbackSpeed + delta).clamp(0.8, 1.25);
     setState(() => _playbackSpeed = newSpeed);
     _audioPlayer?.setSpeed(newSpeed);
   }
