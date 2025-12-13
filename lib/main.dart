@@ -5,14 +5,35 @@ void main() {
   runApp(const GHSApp());
 }
 
-class GHSApp extends StatelessWidget {
+class GHSApp extends StatefulWidget {
   const GHSApp({super.key});
+  
+  static GHSAppState? of(BuildContext context) =>
+      context.findAncestorStateOfType<GHSAppState>();
+
+  @override
+  State<GHSApp> createState() => GHSAppState();
+}
+
+class GHSAppState extends State<GHSApp> {
+  ThemeMode _themeMode = ThemeMode.dark;
+  
+  ThemeMode get themeMode => _themeMode;
+  
+  void toggleTheme() {
+    setState(() {
+      _themeMode = _themeMode == ThemeMode.dark 
+          ? ThemeMode.light 
+          : ThemeMode.dark;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'GHS',
       debugShowCheckedModeBanner: false,
+      themeMode: _themeMode,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF6750A4),

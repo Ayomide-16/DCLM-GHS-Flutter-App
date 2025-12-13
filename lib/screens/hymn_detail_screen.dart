@@ -273,14 +273,14 @@ class _HymnDetailScreenState extends State<HymnDetailScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        // Speed down
+                        // Tempo down
                         IconButton(
                           onPressed: () => _changeSpeed(-0.1),
                           icon: const Icon(Icons.remove),
-                          tooltip: 'Slower',
+                          tooltip: 'Slower tempo',
                         ),
                         
-                        // Speed display
+                        // Tempo display
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
@@ -296,11 +296,11 @@ class _HymnDetailScreenState extends State<HymnDetailScreen> {
                           ),
                         ),
                         
-                        // Speed up
+                        // Tempo up
                         IconButton(
                           onPressed: () => _changeSpeed(0.1),
                           icon: const Icon(Icons.add),
-                          tooltip: 'Faster',
+                          tooltip: 'Faster tempo',
                         ),
                         
                         // Play/Pause

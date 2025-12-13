@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../main.dart';
 import 'hymn_list_screen.dart';
 import 'categories_screen.dart';
 import 'doctrine_screen.dart';
@@ -9,6 +10,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     
     return Scaffold(
       body: SafeArea(
@@ -17,7 +19,19 @@ class HomeScreen extends StatelessWidget {
             padding: const EdgeInsets.all(24.0),
             child: Column(
               children: [
-                const SizedBox(height: 32),
+                // Theme toggle at top right
+                Align(
+                  alignment: Alignment.topRight,
+                  child: IconButton(
+                    onPressed: () => GHSApp.of(context)?.toggleTheme(),
+                    icon: Icon(
+                      isDark ? Icons.light_mode : Icons.dark_mode,
+                    ),
+                    tooltip: isDark ? 'Light Theme' : 'Dark Theme',
+                  ),
+                ),
+                
+                const SizedBox(height: 16),
                 
                 // Logo
                 ClipRRect(
@@ -56,7 +70,7 @@ class HomeScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Gospel Hymn Songs',
+                  'Gospel Hymns and Songs',
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),

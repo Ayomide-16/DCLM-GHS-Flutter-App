@@ -3,6 +3,8 @@ import '../models/hymn.dart';
 import '../services/hymn_service.dart';
 import 'hymn_detail_screen.dart';
 
+enum SortMode { numerical, alphabetical }
+
 class HymnListScreen extends StatefulWidget {
   final String language;
   final String? categoryName;
@@ -25,6 +27,7 @@ class _HymnListScreenState extends State<HymnListScreen> {
   bool _isLoading = true;
   final TextEditingController _searchController = TextEditingController();
   bool _isSearching = false;
+  SortMode _sortMode = SortMode.numerical;
 
   @override
   void initState() {
@@ -35,32 +38,54 @@ class _HymnListScreenState extends State<HymnListScreen> {
   Future<void> _loadHymns() async {
     final hymns = await HymnService.loadHymns(widget.language);
     
-    // Sort hymns: move hymn 0 to the end
-    final sortedHymns = List<Hymn>.from(hymns);
-    sortedHymns.sort((a, b) {
-      if (a.id == 0) return 1;  // Move hymn 0 to end
-      if (b.id == 0) return -1;
-      return a.id.compareTo(b.id);
-    });
-    
     // Apply category filter if provided
-    List<Hymn> finalHymns = sortedHymns;
+    List<Hymn> filteredList = List<Hymn>.from(hymns);
     if (widget.filterHymnIds != null) {
-      finalHymns = sortedHymns
+      filteredList = hymns
           .where((h) => widget.filterHymnIds!.contains(h.id))
           .toList();
     }
     
     setState(() {
-      _allHymns = finalHymns;
-      _filteredHymns = finalHymns;
+      _allHymns = filteredList;
+      _filteredHymns = _sortHymns(filteredList);
       _isLoading = false;
+    });
+  }
+
+  List<Hymn> _sortHymns(List<Hymn> hymns) {
+    final sorted = List<Hymn>.from(hymns);
+    
+    // Separate hymn 0 (always at end)
+    final hymnZero = sorted.where((h) => h.id == 0).toList();
+    final others = sorted.where((h) => h.id != 0).toList();
+    
+    if (_sortMode == SortMode.numerical) {
+      others.sort((a, b) => a.id.compareTo(b.id));
+    } else {
+      others.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+    }
+    
+    // Hymn 0 always at end
+    return [...others, ...hymnZero];
+  }
+
+  void _toggleSortMode() {
+    setState(() {
+      _sortMode = _sortMode == SortMode.numerical 
+          ? SortMode.alphabetical 
+          : SortMode.numerical;
+      _filteredHymns = _sortHymns(
+        _searchController.text.isEmpty 
+            ? _allHymns 
+            : HymnService.searchHymns(_allHymns, _searchController.text)
+      );
     });
   }
 
   void _onSearchChanged(String query) {
     setState(() {
-      _filteredHymns = HymnService.searchHymns(_allHymns, query);
+      _filteredHymns = _sortHymns(HymnService.searchHymns(_allHymns, query));
     });
   }
 
@@ -89,6 +114,19 @@ class _HymnListScreenState extends State<HymnListScreen> {
               )
             : Text(title),
         actions: [
+          // Sort toggle button
+          IconButton(
+            icon: Icon(
+              _sortMode == SortMode.numerical 
+                  ? Icons.sort_by_alpha 
+                  : Icons.format_list_numbered,
+            ),
+            tooltip: _sortMode == SortMode.numerical 
+                ? 'Sort alphabetically' 
+                : 'Sort by number',
+            onPressed: _toggleSortMode,
+          ),
+          // Search button
           IconButton(
             icon: Icon(_isSearching ? Icons.close : Icons.search),
             onPressed: () {
@@ -96,7 +134,7 @@ class _HymnListScreenState extends State<HymnListScreen> {
                 _isSearching = !_isSearching;
                 if (!_isSearching) {
                   _searchController.clear();
-                  _filteredHymns = _allHymns;
+                  _filteredHymns = _sortHymns(_allHymns);
                 }
               });
             },

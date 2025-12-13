@@ -38,6 +38,11 @@ class _DoctrineScreenState extends State<DoctrineScreen> {
           });
         }
       }
+      // Move first doctrine (Acts 2:42, no ID) to end of list
+      if (doctrines.isNotEmpty && doctrines.first['id']!.isEmpty) {
+        final firstDoctrine = doctrines.removeAt(0);
+        doctrines.add(firstDoctrine);
+      }
 
       setState(() {
         _doctrines = doctrines;
