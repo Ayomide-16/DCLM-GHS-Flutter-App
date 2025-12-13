@@ -79,10 +79,7 @@ class _HymnDetailScreenState extends State<HymnDetailScreen> {
     if (_repeatMode == RepeatMode.forStanzas) {
       _currentRepeat++;
       if (_currentRepeat < _repeatCount) {
-        // Wait 2 seconds between repeats for musical flow
-        await Future.delayed(const Duration(seconds: 2));
-        _audioPlayer!.seek(Duration.zero);
-        _audioPlayer!.play();
+        await _repeatWithFade();
       } else {
         // Done repeating
         _currentRepeat = 0;
@@ -91,11 +88,45 @@ class _HymnDetailScreenState extends State<HymnDetailScreen> {
         setState(() => _repeatMode = RepeatMode.off);
       }
     } else if (_repeatMode == RepeatMode.untilStopped) {
-      // Wait 2 seconds between repeats
-      await Future.delayed(const Duration(seconds: 2));
-      _audioPlayer!.seek(Duration.zero);
-      _audioPlayer!.play();
+      await _repeatWithFade();
     }
+  }
+
+  Future<void> _repeatWithFade() async {
+    // Wait 1.5 seconds between repeats
+    await Future.delayed(const Duration(milliseconds: 1500));
+    
+    // Reset to beginning
+    _audioPlayer!.seek(Duration.zero);
+    
+    // Fade in: start at 0 volume and gradually increase
+    await _audioPlayer!.setVolume(0.0);
+    _audioPlayer!.play();
+    
+    // Fade in over 0.5 seconds (5 steps of 100ms)
+    for (int i = 1; i <= 5; i++) {
+      await Future.delayed(const Duration(milliseconds: 100));
+      await _audioPlayer!.setVolume(i / 5.0);
+    }
+  }
+
+  void _setupFadeOutListener() {
+    // Listen for position near end to fade out
+    _audioPlayer!.positionStream.listen((position) async {
+      if (_duration.inMilliseconds > 0 && _repeatMode != RepeatMode.off) {
+        final remaining = _duration - position;
+        // Start fade out 0.5 seconds before end
+        if (remaining.inMilliseconds <= 500 && remaining.inMilliseconds > 400) {
+          // Gradual fade out
+          for (int i = 4; i >= 0; i--) {
+            await Future.delayed(const Duration(milliseconds: 100));
+            if (_audioPlayer != null && _isPlaying) {
+              await _audioPlayer!.setVolume(i / 5.0);
+            }
+          }
+        }
+      }
+    });
   }
 
   @override
